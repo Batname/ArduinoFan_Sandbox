@@ -1,0 +1,81 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "Runtime/Core/Public/HAL/Runnable.h"
+
+class FThreadSafeCounter;
+class FAF_Impl;
+
+//~~~~~ Multi Threading ~~~
+class FArduinoWorker : public FRunnable
+{
+	/** Singleton instance, can access the thread any time via static accessor, if it is active! */
+	static FArduinoWorker* Runnable;
+
+	/** Thread to run the worker FRunnable on */
+	FRunnableThread* Thread;
+
+	/** The Data Ptr */
+	TArray<uint32>* PrimeNumbers;
+
+	/** Stop this thread? Uses Thread Safe Counter */
+	FThreadSafeCounter StopTaskCounter;
+
+private:
+	FAF_Impl* AF_Impl;
+
+public:
+	//~~~ Thread Core Functions ~~~
+
+	//Constructor / Destructor
+	FArduinoWorker(FAF_Impl* AF_Impl);
+	virtual ~FArduinoWorker();
+
+	// Begin FRunnable interface.
+	virtual uint32 Run();
+	virtual void Stop();
+	// End FRunnable interface
+
+	/** Makes sure this thread has stopped properly */
+	void EnsureCompletion();
+
+
+	//~~~ Starting and Stopping Thread ~~~
+	/*
+	Start the thread and the worker from static (easy access)!
+	*/
+	static FArduinoWorker* JoyInit(FAF_Impl* AF_Impl);
+
+	/** Shuts down the thread. Static so it can easily be called from outside the thread context */
+	static void Shutdown();
+};
+
+
+/**
+ * Arduino motor driver communication
+ */
+class  FAF_Impl
+{
+
+public:
+	FAF_Impl();
+	~FAF_Impl();
+
+
+	bool IsConnected() const;
+
+	bool ArduinoInit();
+
+	bool ArduinoDisconnect();
+
+	bool ArduinoMotorForvard();
+
+	bool ArduinoMotorStop();
+
+	bool SetArduinoMotorVoltage(uint8 RelativeVoltage);
+
+private:
+	FArduinoWorker* ArduinoWorker;
+};
