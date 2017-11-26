@@ -65,7 +65,11 @@ class  FAF_Impl
 	friend FArduinoWorker;
 
 public:
-	FAF_Impl(FString ArduinoPortName, float ArduinoWaitTime, int ArduinoMaxDataLength, int32 ArduinoMotorVoltageDefault);
+	FAF_Impl(FString ArduinoPortName,
+		float ArduinoWaitTime,
+		int ArduinoMaxDataLength,
+		int32 ArduinoMotorVoltageDefault,
+		float ArduinoCommunicationDelay);
 	~FAF_Impl();
 
 
@@ -81,25 +85,34 @@ public:
 
 	bool SetArduinoMotorVoltage(uint8 RelativeVoltage);
 
+/*~~~~~~~~~~~~~~~~~~~~~~~~~ Arduino message communication ~~~~~~~~~~~~~~~~~~~~~~~~~*/
+public:
+	FORCEINLINE const FString& GetArduinoMessage() { return ArduinoMessage; }
+
+private:
+	FString ArduinoMessage;
+
 private:
 	FArduinoWorker* ArduinoWorker;
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~ Usb connection implementation ~~~~~~~~~~~~~~~~~~~~~~~~~*/
 private:
-	FString ArduinoPortName;
-	float ArduinoWaitTime;
-	int32 ArduinoMaxDataLength;
-	int32 ArduinoMotorVoltageDefault;
-
 	int ReadSerialPort(char* Buffer, unsigned int BufSize);
 	bool WriteSerialPort(char* Buffer, unsigned int BufSize);
 
 	bool ArduinoUsbConnect();
 	bool ArduinoUsbDisconnect();
 
+	FString ArduinoPortName;
+	float ArduinoWaitTime;
+	int32 ArduinoMaxDataLength;
+	int32 ArduinoMotorVoltageDefault;
+	float ArduinoCommunicationDelay;
 
 	HANDLE Handler;
 	bool bIsConnected;
 	COMSTAT Status;
 	DWORD Errors;
+
+	char* IncomingDataBuffer;
 };

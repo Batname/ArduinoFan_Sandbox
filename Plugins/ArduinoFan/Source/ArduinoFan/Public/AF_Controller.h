@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Engine.h"
 #include "Components/ActorComponent.h"
 #include "AF_Controller.generated.h"
 
@@ -31,6 +32,10 @@ public:
 
 	virtual void OnRegister() override;
 	virtual void OnUnregister() override;
+
+	//Leap Event Interface forwarding, automatically set since 0.6.2, available for event redirection
+	UFUNCTION(BlueprintCallable, meta = (Keywords = "set delegate self"), Category = "ArduinoFan")
+	void SetInterfaceDelegate(UObject* NewDelegate);
 
 	/**
 	* Reports whether this Controller is connected.
@@ -96,6 +101,12 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "ArduinoFan")
 	int32 ArduinoMaxDataLength;
 
+	/**
+	* Communication delay
+	*/
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "ArduinoFan")
+	float ArduinoCommunicationDelay;
+
 
 	/**
 	* Arduino USB port name
@@ -110,4 +121,9 @@ private:
 	TSharedPtr<FAF_Impl> AF_Impl;
 
 	void InterfaceEventTick(float DeltaTime);
+
+/*~~~~~~~~~~~~~~~~~~~~~~~~~ Interface delegation ~~~~~~~~~~~~~~~~~~~~~~~~~*/
+private:
+	UObject* InterfaceDelegate;
+
 };

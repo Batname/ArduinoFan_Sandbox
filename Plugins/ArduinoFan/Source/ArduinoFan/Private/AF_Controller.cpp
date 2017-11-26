@@ -2,17 +2,19 @@
 
 #include "AF_Controller.h"
 #include "AF_Impl.h"
-
+#include "AF_EventInterface.h"
 
 // Sets default values for this component's properties
 UAF_Controller::UAF_Controller(const FObjectInitializer &ObjectInitializer)
 	: UActorComponent(ObjectInitializer)
 	, ArduinoPortName("\\\\.\\COM3")
-	, ArduinoWaitTime(2.f)
+	, ArduinoWaitTime(0.5f)
 	, ArduinoMaxDataLength(255)
 	, ArduinoMotorVoltageDefault(150)
-	, AF_Impl(MakeShareable(new FAF_Impl(ArduinoPortName, ArduinoWaitTime, ArduinoMaxDataLength, ArduinoMotorVoltageDefault)))
+	, ArduinoCommunicationDelay(0.1f)
+	, AF_Impl(MakeShareable(new FAF_Impl(ArduinoPortName, ArduinoWaitTime, ArduinoMaxDataLength, ArduinoMotorVoltageDefault, ArduinoCommunicationDelay)))
 	, CurrentArduinoMotorVoltage(ArduinoMotorVoltageDefault)
+	, InterfaceDelegate(nullptr)
 {
 	bWantsInitializeComponent = true;
 	bAutoActivate = true;
@@ -62,11 +64,29 @@ void UAF_Controller::TickComponent(float DeltaTime, ELevelTick TickType, FActorC
 void UAF_Controller::OnRegister()
 {
 	Super::OnRegister();
+
+	//Attach the delegate pointer automatically
+	SetInterfaceDelegate(GetOwner());
 }
 
 void UAF_Controller::OnUnregister()
 {
 	Super::OnUnregister();
+}
+
+void UAF_Controller::SetInterfaceDelegate(UObject * NewDelegate)
+{
+	UE_LOG(LogTemp, Log, TEXT("InterfaceObject: %s"), *NewDelegate->GetName());
+
+	//Use this format to support both blueprint and C++ form
+	if (NewDelegate->GetClass()->ImplementsInterface(UAF_EventInterface::StaticClass()))
+	{
+		InterfaceDelegate = NewDelegate;
+	}
+	else
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, TEXT("ArduinoController Warning: Delegate is NOT set, did you implement AF_EventInterface?"));
+	}
 }
 
 bool UAF_Controller::IsConnected() const
@@ -103,5 +123,11 @@ bool UAF_Controller::SetArduinoMotorVoltage(uint8 RelativeVoltage)
 
 void UAF_Controller::InterfaceEventTick(float DeltaTime)
 {
+	// Fire arduino message event
+	const FString ArduinoMessage = AF_Impl->GetArduinoMessage();
+	if (!ArduinoMessage.IsEmpty())
+	{
+		IAF_EventInterface::Execute_ArduinoMessage(InterfaceDelegate, ArduinoMessage);
+	}
 }
 

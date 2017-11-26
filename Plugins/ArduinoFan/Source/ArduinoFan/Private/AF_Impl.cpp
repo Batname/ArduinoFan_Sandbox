@@ -40,9 +40,21 @@ uint32 FArduinoWorker::Run()
 	// Arduino main loop
 	while (Connected && StopTaskCounter.GetValue() == 0 && true)
 	{
+		// Read data from Arduino
+		int ReadResult = AF_Impl->ReadSerialPort(AF_Impl->IncomingDataBuffer, AF_Impl->ArduinoMaxDataLength);
+		if (ReadResult)
+		{
+			AF_Impl->IncomingDataBuffer[ReadResult] = 0;
+			UE_LOG(LogTemp, Warning, TEXT("IncomingDataBuffer: %s"), *FString(AF_Impl->IncomingDataBuffer));
+			AF_Impl->ArduinoMessage = FString(AF_Impl->IncomingDataBuffer);
+		}
+		else
+		{
+			AF_Impl->ArduinoMessage = "";
+		}
 
 		//prevent thread from using too many resources
-		FPlatformProcess::Sleep(1.00);
+		FPlatformProcess::Sleep(AF_Impl->ArduinoCommunicationDelay);
 		UE_LOG(LogTemp, Warning, TEXT("FArduinoWorker::Run() Arduino main loop"));
 	}
 
@@ -85,13 +97,16 @@ void FArduinoWorker::Shutdown()
 	}
 }
 
-FAF_Impl::FAF_Impl(FString ArduinoPortName, float ArduinoWaitTime, int ArduinoMaxDataLength, int32 ArduinoMotorVoltageDefault)
+FAF_Impl::FAF_Impl(FString ArduinoPortName, float ArduinoWaitTime, int ArduinoMaxDataLength, int32 ArduinoMotorVoltageDefault, float ArduinoCommunicationDelay)
 	: ArduinoWorker(nullptr)
 	, ArduinoPortName(ArduinoPortName)
 	, ArduinoWaitTime(ArduinoWaitTime)
 	, ArduinoMaxDataLength(ArduinoMaxDataLength)
 	, ArduinoMotorVoltageDefault(ArduinoMotorVoltageDefault)
+	, ArduinoCommunicationDelay(ArduinoCommunicationDelay)
+	, ArduinoMessage("")
 	, bIsConnected(false)
+	, IncomingDataBuffer(nullptr)
 {
 	UE_LOG(LogTemp, Warning, TEXT("FAF_Impl::FAF_Impl"));
 }
@@ -102,6 +117,11 @@ FAF_Impl::~FAF_Impl()
 	UE_LOG(LogTemp, Warning, TEXT("FAF_Impl::~FAF_Impl()"));
 
 	ArduinoDisconnect();
+
+	if (IncomingDataBuffer != nullptr)
+	{
+		delete[] IncomingDataBuffer;
+	}
 }
 
 bool FAF_Impl::IsConnected() const
@@ -111,6 +131,10 @@ bool FAF_Impl::IsConnected() const
 
 bool FAF_Impl::ArduinoInit()
 {
+	// create buffer
+	IncomingDataBuffer = new char[ArduinoMaxDataLength];
+
+	// create thread
 	if (ArduinoWorker == nullptr)
 	{
 		ArduinoWorker = FArduinoWorker::JoyInit(this);
@@ -147,12 +171,45 @@ bool FAF_Impl::SetArduinoMotorVoltage(uint8 RelativeVoltage)
 
 int FAF_Impl::ReadSerialPort(char * Buffer, unsigned int BufSize)
 {
+	DWORD BytesRead;
+	unsigned int ToRead;
+
+	ClearCommError(Handler, &Errors, &Status);
+
+	if (Status.cbInQue > 0)
+	{
+		if (Status.cbInQue > BufSize)
+		{
+			ToRead = BufSize;
+		}
+		else
+		{
+			ToRead = Status.cbInQue;
+		}
+
+		//Try to read the require number of chars, and return the number of read bytes on success
+		if (ReadFile(Handler, Buffer, ToRead, &BytesRead, NULL))
+		{
+			return BytesRead;
+		}
+	}
+
 	return 0;
 }
 
 bool FAF_Impl::WriteSerialPort(char * Buffer, unsigned int BufSize)
 {
-	return false;
+	DWORD BytesSend;
+
+	if (!WriteFile(Handler, (void*)Buffer, BufSize, &BytesSend, 0))
+	{
+		ClearCommError(Handler, &Errors, &Status);
+		return false;
+	}
+	else
+	{
+		return true;
+	}
 }
 
 bool FAF_Impl::ArduinoUsbConnect()
