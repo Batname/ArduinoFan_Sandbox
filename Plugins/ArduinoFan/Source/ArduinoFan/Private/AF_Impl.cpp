@@ -29,12 +29,16 @@ FArduinoWorker::~FArduinoWorker()
 uint32 FArduinoWorker::Run()
 {
 	// Connect to arduino
+	bool Connected = AF_Impl->ArduinoUsbConnect();
 
-	//Initial wait before starting
-	FPlatformProcess::Sleep(0.03);
+	if (Connected)
+	{
+		// Wait before start
+		FPlatformProcess::Sleep(AF_Impl->ArduinoWaitTime);
+	}
 
 	// Arduino main loop
-	while (StopTaskCounter.GetValue() == 0 && true)
+	while (Connected && StopTaskCounter.GetValue() == 0 && true)
 	{
 
 		//prevent thread from using too many resources
@@ -48,6 +52,9 @@ uint32 FArduinoWorker::Run()
 void FArduinoWorker::Stop()
 {
 	StopTaskCounter.Increment();
+
+	// Stop communication with arduino
+	AF_Impl->ArduinoUsbDisconnect();
 }
 
 void FArduinoWorker::EnsureCompletion()
@@ -78,8 +85,13 @@ void FArduinoWorker::Shutdown()
 	}
 }
 
-FAF_Impl::FAF_Impl()
+FAF_Impl::FAF_Impl(FString ArduinoPortName, float ArduinoWaitTime, int ArduinoMaxDataLength, int32 ArduinoMotorVoltageDefault)
 	: ArduinoWorker(nullptr)
+	, ArduinoPortName(ArduinoPortName)
+	, ArduinoWaitTime(ArduinoWaitTime)
+	, ArduinoMaxDataLength(ArduinoMaxDataLength)
+	, ArduinoMotorVoltageDefault(ArduinoMotorVoltageDefault)
+	, bIsConnected(false)
 {
 	UE_LOG(LogTemp, Warning, TEXT("FAF_Impl::FAF_Impl"));
 }
@@ -130,5 +142,80 @@ bool FAF_Impl::ArduinoMotorStop()
 
 bool FAF_Impl::SetArduinoMotorVoltage(uint8 RelativeVoltage)
 {
+	return true;
+}
+
+int FAF_Impl::ReadSerialPort(char * Buffer, unsigned int BufSize)
+{
+	return 0;
+}
+
+bool FAF_Impl::WriteSerialPort(char * Buffer, unsigned int BufSize)
+{
+	return false;
+}
+
+bool FAF_Impl::ArduinoUsbConnect()
+{
+	Handler = CreateFileA(static_cast<LPCSTR>(TCHAR_TO_ANSI(*ArduinoPortName)),
+		GENERIC_READ | GENERIC_WRITE,
+		0,
+		NULL,
+		OPEN_EXISTING,
+		FILE_ATTRIBUTE_NORMAL,
+		NULL);
+
+
+	if (Handler == INVALID_HANDLE_VALUE)
+	{
+		if (GetLastError() == ERROR_FILE_NOT_FOUND)
+		{
+			UE_LOG(LogTemp, Error, TEXT(">> ERROR: Handle was not attached. Reason: %s not available"), *ArduinoPortName);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("Unknown error, port %s"), *ArduinoPortName);
+		}
+	}
+	else
+	{
+		DCB DCBSerialParameters = { 0 };
+		if (!GetCommState(Handler, &DCBSerialParameters))
+		{
+			UE_LOG(LogTemp, Error, TEXT("failed to get current serial parameters"));
+		}
+		else
+		{
+			DCBSerialParameters.BaudRate = CBR_9600;
+			DCBSerialParameters.ByteSize = 8;
+			DCBSerialParameters.StopBits = ONESTOPBIT;
+			DCBSerialParameters.Parity = NOPARITY;
+			DCBSerialParameters.fDtrControl = DTR_CONTROL_ENABLE;
+
+			if (!SetCommState(Handler, &DCBSerialParameters))
+			{
+				UE_LOG(LogTemp, Error, TEXT("ALERT: could not set Serial port parameters"));
+			}
+			else
+			{
+				bIsConnected = true;
+				PurgeComm(Handler, PURGE_RXCLEAR | PURGE_TXCLEAR);
+
+				UE_LOG(LogTemp, Warning, TEXT("Arduino connected"));
+			}
+		}
+	}
+
+	return bIsConnected;
+}
+
+bool FAF_Impl::ArduinoUsbDisconnect()
+{
+	if (bIsConnected)
+	{
+		bIsConnected = false;
+		CloseHandle(Handler);
+	}
+
 	return true;
 }

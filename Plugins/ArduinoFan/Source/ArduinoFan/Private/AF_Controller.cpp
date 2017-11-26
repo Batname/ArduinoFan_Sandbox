@@ -7,8 +7,11 @@
 // Sets default values for this component's properties
 UAF_Controller::UAF_Controller(const FObjectInitializer &ObjectInitializer)
 	: UActorComponent(ObjectInitializer)
-	, AF_Impl(MakeShareable(new FAF_Impl()))
+	, ArduinoPortName("\\\\.\\COM3")
+	, ArduinoWaitTime(2.f)
+	, ArduinoMaxDataLength(255)
 	, ArduinoMotorVoltageDefault(150)
+	, AF_Impl(MakeShareable(new FAF_Impl(ArduinoPortName, ArduinoWaitTime, ArduinoMaxDataLength, ArduinoMotorVoltageDefault)))
 	, CurrentArduinoMotorVoltage(ArduinoMotorVoltageDefault)
 {
 	bWantsInitializeComponent = true;

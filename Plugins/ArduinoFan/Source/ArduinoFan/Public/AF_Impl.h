@@ -5,6 +5,10 @@
 #include "CoreMinimal.h"
 #include "Runtime/Core/Public/HAL/Runnable.h"
 
+#include <Windows.h>
+#include <stdio.h>
+#include <stdlib.h>
+
 class FThreadSafeCounter;
 class FAF_Impl;
 
@@ -58,9 +62,10 @@ public:
  */
 class  FAF_Impl
 {
+	friend FArduinoWorker;
 
 public:
-	FAF_Impl();
+	FAF_Impl(FString ArduinoPortName, float ArduinoWaitTime, int ArduinoMaxDataLength, int32 ArduinoMotorVoltageDefault);
 	~FAF_Impl();
 
 
@@ -78,4 +83,23 @@ public:
 
 private:
 	FArduinoWorker* ArduinoWorker;
+
+/*~~~~~~~~~~~~~~~~~~~~~~~~~ Usb connection implementation ~~~~~~~~~~~~~~~~~~~~~~~~~*/
+private:
+	FString ArduinoPortName;
+	float ArduinoWaitTime;
+	int32 ArduinoMaxDataLength;
+	int32 ArduinoMotorVoltageDefault;
+
+	int ReadSerialPort(char* Buffer, unsigned int BufSize);
+	bool WriteSerialPort(char* Buffer, unsigned int BufSize);
+
+	bool ArduinoUsbConnect();
+	bool ArduinoUsbDisconnect();
+
+
+	HANDLE Handler;
+	bool bIsConnected;
+	COMSTAT Status;
+	DWORD Errors;
 };

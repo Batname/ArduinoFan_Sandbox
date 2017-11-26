@@ -26,18 +26,6 @@ protected:
 
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 public:	
-	/**
-	* Default relative voltage for arduino motors
-	*/
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "ArduinoFan")
-	uint8 ArduinoMotorVoltageDefault;
-
-	/**
-	* Keep in track current arduino voltage
-	*/
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "ArduinoFan")
-	uint8 CurrentArduinoMotorVoltage;
-
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
@@ -81,6 +69,40 @@ public:
 	*/
 	UFUNCTION(BlueprintCallable, meta = (Keywords = "stop arduino fans"), Category = "ArduinoFan")
 	bool SetArduinoMotorVoltage(uint8 RelativeVoltage);
+
+/*~~~~~~~~~~~~~~~~~~~~~~~~~ Arduino manage variables ~~~~~~~~~~~~~~~~~~~~~~~~~*/
+protected:
+	/**
+	* Default relative voltage for arduino motors
+	*/
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "ArduinoFan")
+	uint8 ArduinoMotorVoltageDefault;
+
+	/**
+	* Keep in track current arduino voltage
+	*/
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "ArduinoFan")
+	uint8 CurrentArduinoMotorVoltage;
+
+	/**
+	* Connection delay for arduino
+	*/
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "ArduinoFan")
+	float ArduinoWaitTime;
+
+	/**
+	* Data buffer for arduino communication
+	*/
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "ArduinoFan")
+	int32 ArduinoMaxDataLength;
+
+
+	/**
+	* Arduino USB port name
+	*/
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "ArduinoFan")
+	FString ArduinoPortName;
+
 
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~ Implementation ~~~~~~~~~~~~~~~~~~~~~~~~~*/
