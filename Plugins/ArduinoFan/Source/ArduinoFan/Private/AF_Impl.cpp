@@ -46,7 +46,7 @@ uint32 FArduinoWorker::Run()
 	if (Connected)
 	{
 		// Wait before start
-		FPlatformProcess::Sleep(3.f);
+		FPlatformProcess::Sleep(AF_Impl->ArduinoWaitTime);
 
 		// Setup default voltage
 		FString ArduinoSetupVoltage = FString::Printf(TEXT("Voltage %d"), AF_Impl->ArduinoMotorVoltageDefault);
@@ -57,6 +57,12 @@ uint32 FArduinoWorker::Run()
 
 		delete[] ArduinoCommandStr;
 
+		FPlatformProcess::Sleep(AF_Impl->ArduinoWaitTime);
+
+		// Run motors
+		ArduinoCommandStr = ArduinoCommandString("2");
+		AF_Impl->WriteSerialPort(ArduinoCommandStr, AF_Impl->ArduinoMaxDataLength);
+		delete[] ArduinoCommandStr;
 		FPlatformProcess::Sleep(AF_Impl->ArduinoCommunicationDelay);
 	}
 
@@ -70,9 +76,6 @@ uint32 FArduinoWorker::Run()
 
 			//Writing string to arduino
 			AF_Impl->WriteSerialPort(ArduinoCommandStr, AF_Impl->ArduinoMaxDataLength);
-
-			UE_LOG(LogTemp, Warning, TEXT("ArduinoCommandStr: %s"), *FString(ArduinoCommandStr));
-
 
 			delete[] ArduinoCommandStr;
 
@@ -101,6 +104,17 @@ uint32 FArduinoWorker::Run()
 
 void FArduinoWorker::Stop()
 {
+	if (AF_Impl->IsConnected())
+	{
+		// Stop motors
+		char *ArduinoCommandStr = ArduinoCommandString("1");
+
+		//Writing string to arduino
+		AF_Impl->WriteSerialPort(ArduinoCommandStr, AF_Impl->ArduinoMaxDataLength);
+
+		delete[] ArduinoCommandStr;
+	}
+
 	StopTaskCounter.Increment();
 
 	// Stop communication with arduino
