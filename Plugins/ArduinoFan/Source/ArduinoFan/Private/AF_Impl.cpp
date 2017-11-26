@@ -9,6 +9,16 @@
 //Thread Worker Starts as NULL, prior to being instanced
 FArduinoWorker* FArduinoWorker::Runnable = nullptr;
 
+char * FArduinoWorker::ArduinoCommandString(const FString & ArduinoCommand)
+{
+	std::string InputString(TCHAR_TO_ANSI(*ArduinoCommand));
+	char *c_string = new char[ArduinoCommand.Len() + 1];
+	std::copy(InputString.begin(), InputString.end(), c_string);
+	c_string[InputString.size()] = '\n';
+
+	return c_string;
+}
+
 FArduinoWorker::FArduinoWorker(FAF_Impl * AF_Impl)
 	: AF_Impl(AF_Impl)
 	, StopTaskCounter(0)
@@ -36,7 +46,18 @@ uint32 FArduinoWorker::Run()
 	if (Connected)
 	{
 		// Wait before start
-		FPlatformProcess::Sleep(AF_Impl->ArduinoWaitTime);
+		FPlatformProcess::Sleep(3.f);
+
+		// Setup default voltage
+		FString ArduinoSetupVoltage = FString::Printf(TEXT("Voltage %d"), AF_Impl->ArduinoMotorVoltageDefault);
+		char *ArduinoCommandStr = ArduinoCommandString(ArduinoSetupVoltage);
+
+		//Writing string to arduino
+		AF_Impl->WriteSerialPort(ArduinoCommandStr, AF_Impl->ArduinoMaxDataLength);
+
+		delete[] ArduinoCommandStr;
+
+		FPlatformProcess::Sleep(AF_Impl->ArduinoCommunicationDelay);
 	}
 
 	// Arduino main loop
@@ -45,15 +66,15 @@ uint32 FArduinoWorker::Run()
 		// Execute Arduino command
 		if (!AF_Impl->ArduinoCommand.IsEmpty())
 		{
-			std::string InputString(TCHAR_TO_ANSI(*AF_Impl->ArduinoCommand));
-			char *c_string = new char[AF_Impl->ArduinoCommand.Len() + 1];
-			std::copy(InputString.begin(), InputString.end(), c_string);
-			c_string[InputString.size()] = '\n';
+			char *ArduinoCommandStr = ArduinoCommandString(AF_Impl->ArduinoCommand);
 
 			//Writing string to arduino
-			AF_Impl->WriteSerialPort(c_string, AF_Impl->ArduinoMaxDataLength);
+			AF_Impl->WriteSerialPort(ArduinoCommandStr, AF_Impl->ArduinoMaxDataLength);
 
-			delete[] c_string;
+			UE_LOG(LogTemp, Warning, TEXT("ArduinoCommandStr: %s"), *FString(ArduinoCommandStr));
+
+
+			delete[] ArduinoCommandStr;
 
 			// clear command
 			AF_Impl->ArduinoCommand = "";
@@ -64,7 +85,6 @@ uint32 FArduinoWorker::Run()
 		if (ReadResult)
 		{
 			AF_Impl->IncomingDataBuffer[ReadResult] = 0;
-			UE_LOG(LogTemp, Warning, TEXT("IncomingDataBuffer: %s"), *FString(AF_Impl->IncomingDataBuffer));
 			AF_Impl->ArduinoMessage = FString(AF_Impl->IncomingDataBuffer);
 		}
 		else

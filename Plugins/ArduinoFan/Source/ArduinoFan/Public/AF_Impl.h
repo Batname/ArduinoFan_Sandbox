@@ -27,6 +27,8 @@ class FArduinoWorker : public FRunnable
 	/** Stop this thread? Uses Thread Safe Counter */
 	FThreadSafeCounter StopTaskCounter;
 
+	char* ArduinoCommandString(const FString& ArduinoCommand);
+
 private:
 	FAF_Impl* AF_Impl;
 

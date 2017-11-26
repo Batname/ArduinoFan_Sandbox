@@ -8,7 +8,7 @@
 UAF_Controller::UAF_Controller(const FObjectInitializer &ObjectInitializer)
 	: UActorComponent(ObjectInitializer)
 	, ArduinoPortName("\\\\.\\COM3")
-	, ArduinoWaitTime(0.5f)
+	, ArduinoWaitTime(2.f)
 	, ArduinoMaxDataLength(255)
 	, ArduinoMotorVoltageDefault(150)
 	, ArduinoCommunicationDelay(0.1f)
