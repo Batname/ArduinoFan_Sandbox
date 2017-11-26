@@ -4,6 +4,8 @@
 #include "Runtime/Core/Public/HAL/ThreadSafeCounter.h"
 #include "Runtime/Core/Public/HAL/RunnableThread.h"
 
+#include <string>
+
 //Thread Worker Starts as NULL, prior to being instanced
 FArduinoWorker* FArduinoWorker::Runnable = nullptr;
 
@@ -40,6 +42,23 @@ uint32 FArduinoWorker::Run()
 	// Arduino main loop
 	while (Connected && StopTaskCounter.GetValue() == 0 && true)
 	{
+		// Execute Arduino command
+		if (!AF_Impl->ArduinoCommand.IsEmpty())
+		{
+			std::string InputString(TCHAR_TO_ANSI(*AF_Impl->ArduinoCommand));
+			char *c_string = new char[AF_Impl->ArduinoCommand.Len() + 1];
+			std::copy(InputString.begin(), InputString.end(), c_string);
+			c_string[InputString.size()] = '\n';
+
+			//Writing string to arduino
+			AF_Impl->WriteSerialPort(c_string, AF_Impl->ArduinoMaxDataLength);
+
+			delete[] c_string;
+
+			// clear command
+			AF_Impl->ArduinoCommand = "";
+		}
+
 		// Read data from Arduino
 		int ReadResult = AF_Impl->ReadSerialPort(AF_Impl->IncomingDataBuffer, AF_Impl->ArduinoMaxDataLength);
 		if (ReadResult)
@@ -55,7 +74,6 @@ uint32 FArduinoWorker::Run()
 
 		//prevent thread from using too many resources
 		FPlatformProcess::Sleep(AF_Impl->ArduinoCommunicationDelay);
-		UE_LOG(LogTemp, Warning, TEXT("FArduinoWorker::Run() Arduino main loop"));
 	}
 
 	return 0;
@@ -105,6 +123,7 @@ FAF_Impl::FAF_Impl(FString ArduinoPortName, float ArduinoWaitTime, int ArduinoMa
 	, ArduinoMotorVoltageDefault(ArduinoMotorVoltageDefault)
 	, ArduinoCommunicationDelay(ArduinoCommunicationDelay)
 	, ArduinoMessage("")
+	, ArduinoCommand("")
 	, bIsConnected(false)
 	, IncomingDataBuffer(nullptr)
 {
@@ -150,6 +169,13 @@ bool FAF_Impl::ArduinoDisconnect()
 		FArduinoWorker::Shutdown();
 		ArduinoWorker = nullptr;
 	}
+
+	return true;
+}
+
+bool FAF_Impl::ArduinoMotorStart()
+{
+	ArduinoCommand = "2";
 
 	return true;
 }

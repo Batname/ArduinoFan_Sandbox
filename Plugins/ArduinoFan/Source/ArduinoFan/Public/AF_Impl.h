@@ -79,18 +79,22 @@ public:
 
 	bool ArduinoDisconnect();
 
+	bool ArduinoMotorStart();
+
 	bool ArduinoMotorForvard();
 
 	bool ArduinoMotorStop();
 
 	bool SetArduinoMotorVoltage(uint8 RelativeVoltage);
 
-/*~~~~~~~~~~~~~~~~~~~~~~~~~ Arduino message communication ~~~~~~~~~~~~~~~~~~~~~~~~~*/
+/*~~~~~~~~~~~~~~~~~~~~~~~~~ Arduino communication ~~~~~~~~~~~~~~~~~~~~~~~~~*/
 public:
 	FORCEINLINE const FString& GetArduinoMessage() { return ArduinoMessage; }
 
 private:
 	FString ArduinoMessage;
+
+	FString ArduinoCommand;
 
 private:
 	FArduinoWorker* ArduinoWorker;

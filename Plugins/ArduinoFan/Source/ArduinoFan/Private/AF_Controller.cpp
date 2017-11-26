@@ -39,7 +39,7 @@ void UAF_Controller::BeginPlay()
 {
 	Super::BeginPlay();
 
-	AF_Impl->ArduinoInit();
+	ArduinoInit();
 
 	UE_LOG(LogTemp, Warning, TEXT("UAF_Controller::BeginPlay"));
 }
@@ -96,24 +96,27 @@ bool UAF_Controller::IsConnected() const
 
 bool UAF_Controller::ArduinoInit()
 {
-	return false;
+	return AF_Impl->ArduinoInit();
+}
+
+bool UAF_Controller::ArduinoMotorStart()
+{
+	return AF_Impl->ArduinoMotorStart();
 }
 
 bool UAF_Controller::ArduinoDisconnect()
 {
-	AF_Impl->ArduinoDisconnect();
-
-	return false;
+	return AF_Impl->ArduinoDisconnect();
 }
 
 bool UAF_Controller::ArduinoMotorForvard()
 {
-	return false;
+	return AF_Impl->ArduinoMotorForvard();
 }
 
 bool UAF_Controller::ArduinoMotorStop()
 {
-	return false;
+	return AF_Impl->ArduinoMotorStop();
 }
 
 bool UAF_Controller::SetArduinoMotorVoltage(uint8 RelativeVoltage)
