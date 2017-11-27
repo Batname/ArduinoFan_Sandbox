@@ -59,7 +59,7 @@ uint32 FArduinoWorker::Run()
 	}
 
 	// Arduino main loop
-	while (Connected && StopTaskCounter.GetValue() == 0 && true)
+	while (Connected && StopTaskCounter.GetValue() == 0)
 	{
 		// Execute Arduino command
 		if (!AF_Impl->ArduinoCommand.IsEmpty())
@@ -90,11 +90,13 @@ uint32 FArduinoWorker::Run()
 		}
 
 		// Read data from Arduino
-		int ReadResult = AF_Impl->ReadSerialPort(AF_Impl->IncomingDataBuffer, AF_Impl->ArduinoMaxDataLength);
+		char* IncomingDataBuffer = new char[AF_Impl->ArduinoMaxDataLength];
+
+		int ReadResult = AF_Impl->ReadSerialPort(IncomingDataBuffer, AF_Impl->ArduinoMaxDataLength);
 		if (ReadResult)
 		{
-			AF_Impl->IncomingDataBuffer[ReadResult] = 0;
-			AF_Impl->ArduinoMessage = FString(AF_Impl->IncomingDataBuffer);
+			IncomingDataBuffer[ReadResult] = 0;
+			AF_Impl->ArduinoMessage = FString(IncomingDataBuffer);
 
 			// Set Init state
 			if (EArduinoFanState::AF_None == AF_Impl->ArduinoFanState && AF_Impl->ArduinoMessage.Contains("Init"))
@@ -122,6 +124,8 @@ uint32 FArduinoWorker::Run()
 			AF_Impl->ArduinoMessage = "";
 		}
 
+		delete[] IncomingDataBuffer;
+
 		//prevent thread from using too many resources
 		FPlatformProcess::Sleep(AF_Impl->ArduinoCommunicationDelay);
 	}
@@ -140,18 +144,20 @@ void FArduinoWorker::Stop()
 		AF_Impl->WriteSerialPort(ArduinoCommandStr, AF_Impl->ArduinoMaxDataLength);
 
 		delete[] ArduinoCommandStr;
+
+		FPlatformProcess::Sleep(1.f);
 	}
 
 	StopTaskCounter.Increment();
-
-	// Stop communication with arduino
-	AF_Impl->ArduinoUsbDisconnect();
 }
 
 void FArduinoWorker::EnsureCompletion()
 {
 	Stop();
 	Thread->WaitForCompletion();
+
+	// Stop communication with arduino
+	AF_Impl->ArduinoUsbDisconnect();
 }
 
 FArduinoWorker * FArduinoWorker::JoyInit(FAF_Impl * AF_Impl)
@@ -186,7 +192,6 @@ FAF_Impl::FAF_Impl(FString ArduinoPortName, float ArduinoWaitTime, int ArduinoMa
 	, ArduinoMessage("")
 	, ArduinoCommand("")
 	, bIsConnected(false)
-	, IncomingDataBuffer(nullptr)
 	, ArduinoFanState(EArduinoFanState::AF_None)
 {
 	UE_LOG(LogTemp, Warning, TEXT("FAF_Impl::FAF_Impl"));
@@ -198,11 +203,6 @@ FAF_Impl::~FAF_Impl()
 	UE_LOG(LogTemp, Warning, TEXT("FAF_Impl::~FAF_Impl()"));
 
 	ArduinoDisconnect();
-
-	if (IncomingDataBuffer != nullptr)
-	{
-		delete[] IncomingDataBuffer;
-	}
 }
 
 bool FAF_Impl::IsConnected() const
@@ -212,9 +212,6 @@ bool FAF_Impl::IsConnected() const
 
 bool FAF_Impl::ArduinoInit()
 {
-	// create buffer
-	IncomingDataBuffer = new char[ArduinoMaxDataLength];
-
 	// create thread
 	if (ArduinoWorker == nullptr)
 	{

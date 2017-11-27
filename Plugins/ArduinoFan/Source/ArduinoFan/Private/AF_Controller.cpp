@@ -12,7 +12,7 @@ UAF_Controller::UAF_Controller(const FObjectInitializer &ObjectInitializer)
 	, ArduinoMaxDataLength(255)
 	, ArduinoMotorVoltageDefault(0)
 	, ArduinoCommunicationDelay(0.1f)
-	, AF_Impl(MakeShareable(new FAF_Impl(ArduinoPortName, ArduinoWaitTime, ArduinoMaxDataLength, ArduinoMotorVoltageDefault, ArduinoCommunicationDelay)))
+	, AF_Impl(new FAF_Impl(ArduinoPortName, ArduinoWaitTime, ArduinoMaxDataLength, ArduinoMotorVoltageDefault, ArduinoCommunicationDelay))
 	, CurrentArduinoMotorVoltage(ArduinoMotorVoltageDefault)
 	, InterfaceDelegate(nullptr)
 {
@@ -25,9 +25,12 @@ UAF_Controller::UAF_Controller(const FObjectInitializer &ObjectInitializer)
 
 UAF_Controller::~UAF_Controller()
 {
-	if (AF_Impl.IsValid())
+	if (AF_Impl != nullptr)
 	{
-		AF_Impl.Reset();
+		AF_Impl->ArduinoDisconnect();
+
+		delete AF_Impl;
+		AF_Impl = nullptr;
 	}
 
 	UE_LOG(LogTemp, Warning, TEXT("UAF_Controller::~UAF_Controller"));

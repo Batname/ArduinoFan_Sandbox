@@ -118,7 +118,7 @@ protected:
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~ Implementation ~~~~~~~~~~~~~~~~~~~~~~~~~*/
 private:
-	TSharedPtr<FAF_Impl> AF_Impl;
+	FAF_Impl* AF_Impl;
 
 	void InterfaceEventTick(float DeltaTime);
 

@@ -127,7 +127,5 @@ private:
 	COMSTAT Status;
 	DWORD Errors;
 
-	char* IncomingDataBuffer;
-
 	EArduinoFanState ArduinoFanState;
 };
