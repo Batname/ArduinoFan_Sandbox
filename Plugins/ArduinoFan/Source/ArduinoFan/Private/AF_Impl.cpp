@@ -114,7 +114,7 @@ uint32 FArduinoWorker::Run()
 		delete[] IncomingDataBuffer;
 
 		//prevent thread from using too many resources
-		FPlatformProcess::Sleep(0.1f);
+		FPlatformProcess::Sleep(AF_Impl->ArduinoCommunicationDelay);
 	}
 
 	return 0;
@@ -132,7 +132,7 @@ void FArduinoWorker::Stop()
 
 		delete[] ArduinoCommandStr;
 
-		FPlatformProcess::Sleep(1.f);
+		FPlatformProcess::Sleep(AF_Impl->ArduinoCommunicationDelay);
 	}
 
 	StopTaskCounter.Increment();
