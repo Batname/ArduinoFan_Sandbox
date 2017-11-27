@@ -5,10 +5,8 @@
 #include "CoreMinimal.h"
 #include "Engine.h"
 #include "Components/ActorComponent.h"
+#include "AF_Impl.h"
 #include "AF_Controller.generated.h"
-
-
-class FAF_Impl;
 
 UCLASS( ClassGroup=ArduinoFan, meta=(BlueprintSpawnableComponent) )
 class ARDUINOFAN_API UAF_Controller : public UActorComponent
@@ -74,6 +72,12 @@ public:
 	*/
 	UFUNCTION(BlueprintCallable, meta = (Keywords = "stop arduino fans"), Category = "ArduinoFan")
 	bool SetArduinoMotorVoltage(uint8 RelativeVoltage);
+
+	/**
+	* Status of arduino
+	*/
+	UFUNCTION(BlueprintCallable, meta = (Keywords = "stop arduino fans"), Category = "ArduinoFan")
+	EArduinoFanState GetArduinoFanState() { return AF_Impl->GetArduinoFanState(); }
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~ Arduino manage variables ~~~~~~~~~~~~~~~~~~~~~~~~~*/
 protected:

@@ -109,6 +109,9 @@ private:
 	FArduinoWorker* ArduinoWorker;
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~ Usb connection implementation ~~~~~~~~~~~~~~~~~~~~~~~~~*/
+public:
+	EArduinoFanState GetArduinoFanState() { return ArduinoFanState; }
+
 private:
 	int ReadSerialPort(char* Buffer, unsigned int BufSize);
 	bool WriteSerialPort(char* Buffer, unsigned int BufSize);

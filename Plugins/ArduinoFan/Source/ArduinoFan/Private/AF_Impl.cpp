@@ -53,7 +53,7 @@ uint32 FArduinoWorker::Run()
 		char *ArduinoCommandStr = ArduinoCommandString(ArduinoSetupVoltage);
 
 		//Writing string to arduino
-		AF_Impl->WriteSerialPort(ArduinoCommandStr, AF_Impl->ArduinoMaxDataLength);
+		AF_Impl->WriteSerialPort(ArduinoCommandStr, ArduinoSetupVoltage.Len() + 1);
 
 		delete[] ArduinoCommandStr;
 	}
@@ -66,22 +66,8 @@ uint32 FArduinoWorker::Run()
 		{
 			char *ArduinoCommandStr = ArduinoCommandString(AF_Impl->ArduinoCommand);
 
-			// Execute Voltage command only if AF_Forvard of AF_Rever states
-			if (
-				AF_Impl->ArduinoCommand.Contains("Voltage") &&
-				(AF_Impl->ArduinoFanState == EArduinoFanState::AF_Forward || AF_Impl->ArduinoFanState == EArduinoFanState::AF_Reverse)
-				)
-			{
-				// Writing string to arduino
-				AF_Impl->WriteSerialPort(ArduinoCommandStr, AF_Impl->ArduinoMaxDataLength);
-			}
-			else
-			{
-				continue;
-			}
-
 			// Writing string to arduino
-			AF_Impl->WriteSerialPort(ArduinoCommandStr, AF_Impl->ArduinoMaxDataLength);
+			AF_Impl->WriteSerialPort(ArduinoCommandStr, AF_Impl->ArduinoCommand.Len() + 1);
 
 			delete[] ArduinoCommandStr;
 
@@ -103,17 +89,18 @@ uint32 FArduinoWorker::Run()
 			{
 				AF_Impl->ArduinoFanState = EArduinoFanState::AF_Forward;
 			}
-
+			if (AF_Impl->ArduinoMessage.Contains("SetVoltage"))
+			{
+				UE_LOG(LogTemp, Warning, TEXT("VOLTAGE RESPONSE"));
+			}
 			if (AF_Impl->ArduinoMessage.Contains("Stop"))
 			{
 				AF_Impl->ArduinoFanState = EArduinoFanState::AF_Stop;
 			}
-
 			if (AF_Impl->ArduinoMessage.Contains("Forward"))
 			{
 				AF_Impl->ArduinoFanState = EArduinoFanState::AF_Forward;
 			}
-
 			if (AF_Impl->ArduinoMessage.Contains("Reverse"))
 			{
 				AF_Impl->ArduinoFanState = EArduinoFanState::AF_Reverse;
@@ -127,7 +114,7 @@ uint32 FArduinoWorker::Run()
 		delete[] IncomingDataBuffer;
 
 		//prevent thread from using too many resources
-		FPlatformProcess::Sleep(AF_Impl->ArduinoCommunicationDelay);
+		FPlatformProcess::Sleep(0.1f);
 	}
 
 	return 0;
