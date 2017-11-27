@@ -9,6 +9,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+UENUM(BlueprintType)
+enum class EArduinoFanState : uint8
+{
+	AF_None 		UMETA(DisplayName = "State before init"),
+	AF_Stop 		UMETA(DisplayName = "Stop fans state"),
+	AF_Forward		UMETA(DisplayName = "Forward fans state"),
+	AF_Reverse 		UMETA(DisplayName = "Reverse fans state"),
+};
+
 class FThreadSafeCounter;
 class FAF_Impl;
 
@@ -81,8 +90,6 @@ public:
 
 	bool ArduinoDisconnect();
 
-	bool ArduinoMotorStart();
-
 	bool ArduinoMotorForvard();
 
 	bool ArduinoMotorStop();
@@ -121,4 +128,6 @@ private:
 	DWORD Errors;
 
 	char* IncomingDataBuffer;
+
+	EArduinoFanState ArduinoFanState;
 };

@@ -10,7 +10,7 @@ UAF_Controller::UAF_Controller(const FObjectInitializer &ObjectInitializer)
 	, ArduinoPortName("\\\\.\\COM3")
 	, ArduinoWaitTime(2.f)
 	, ArduinoMaxDataLength(255)
-	, ArduinoMotorVoltageDefault(150)
+	, ArduinoMotorVoltageDefault(0)
 	, ArduinoCommunicationDelay(0.1f)
 	, AF_Impl(MakeShareable(new FAF_Impl(ArduinoPortName, ArduinoWaitTime, ArduinoMaxDataLength, ArduinoMotorVoltageDefault, ArduinoCommunicationDelay)))
 	, CurrentArduinoMotorVoltage(ArduinoMotorVoltageDefault)
@@ -99,11 +99,6 @@ bool UAF_Controller::ArduinoInit()
 	return AF_Impl->ArduinoInit();
 }
 
-bool UAF_Controller::ArduinoMotorStart()
-{
-	return AF_Impl->ArduinoMotorStart();
-}
-
 bool UAF_Controller::ArduinoDisconnect()
 {
 	return AF_Impl->ArduinoDisconnect();
@@ -121,7 +116,7 @@ bool UAF_Controller::ArduinoMotorStop()
 
 bool UAF_Controller::SetArduinoMotorVoltage(uint8 RelativeVoltage)
 {
-	return false;
+	return AF_Impl->SetArduinoMotorVoltage(RelativeVoltage);
 }
 
 void UAF_Controller::InterfaceEventTick(float DeltaTime)

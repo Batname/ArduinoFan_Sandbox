@@ -50,12 +50,6 @@ public:
 	bool ArduinoInit();
 
 	/**
-	* Start the motors of arduino
-	*/
-	UFUNCTION(BlueprintCallable, meta = (Keywords = "start arduino motor"), Category = "ArduinoFan")
-	bool ArduinoMotorStart();
-
-	/**
 	* Stop arduino main tread
 	*/
 	UFUNCTION(BlueprintCallable, meta = (Keywords = "disconnect arduino"), Category = "ArduinoFan")

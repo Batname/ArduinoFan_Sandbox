@@ -49,21 +49,13 @@ uint32 FArduinoWorker::Run()
 		FPlatformProcess::Sleep(AF_Impl->ArduinoWaitTime);
 
 		// Setup default voltage
-		FString ArduinoSetupVoltage = FString::Printf(TEXT("Voltage %d"), AF_Impl->ArduinoMotorVoltageDefault);
+		FString ArduinoSetupVoltage = FString::Printf(TEXT("Init Voltage %d"), AF_Impl->ArduinoMotorVoltageDefault);
 		char *ArduinoCommandStr = ArduinoCommandString(ArduinoSetupVoltage);
 
 		//Writing string to arduino
 		AF_Impl->WriteSerialPort(ArduinoCommandStr, AF_Impl->ArduinoMaxDataLength);
 
 		delete[] ArduinoCommandStr;
-
-		FPlatformProcess::Sleep(AF_Impl->ArduinoWaitTime);
-
-		// Run motors
-		ArduinoCommandStr = ArduinoCommandString("2");
-		AF_Impl->WriteSerialPort(ArduinoCommandStr, AF_Impl->ArduinoMaxDataLength);
-		delete[] ArduinoCommandStr;
-		FPlatformProcess::Sleep(AF_Impl->ArduinoCommunicationDelay);
 	}
 
 	// Arduino main loop
@@ -74,7 +66,21 @@ uint32 FArduinoWorker::Run()
 		{
 			char *ArduinoCommandStr = ArduinoCommandString(AF_Impl->ArduinoCommand);
 
-			//Writing string to arduino
+			// Execute Voltage command only if AF_Forvard of AF_Rever states
+			if (
+				AF_Impl->ArduinoCommand.Contains("Voltage") &&
+				(AF_Impl->ArduinoFanState == EArduinoFanState::AF_Forward || AF_Impl->ArduinoFanState == EArduinoFanState::AF_Reverse)
+				)
+			{
+				// Writing string to arduino
+				AF_Impl->WriteSerialPort(ArduinoCommandStr, AF_Impl->ArduinoMaxDataLength);
+			}
+			else
+			{
+				continue;
+			}
+
+			// Writing string to arduino
 			AF_Impl->WriteSerialPort(ArduinoCommandStr, AF_Impl->ArduinoMaxDataLength);
 
 			delete[] ArduinoCommandStr;
@@ -89,6 +95,27 @@ uint32 FArduinoWorker::Run()
 		{
 			AF_Impl->IncomingDataBuffer[ReadResult] = 0;
 			AF_Impl->ArduinoMessage = FString(AF_Impl->IncomingDataBuffer);
+
+			// Set Init state
+			if (EArduinoFanState::AF_None == AF_Impl->ArduinoFanState && AF_Impl->ArduinoMessage.Contains("Init"))
+			{
+				AF_Impl->ArduinoFanState = EArduinoFanState::AF_Forward;
+			}
+
+			if (AF_Impl->ArduinoMessage.Contains("Stop"))
+			{
+				AF_Impl->ArduinoFanState = EArduinoFanState::AF_Stop;
+			}
+
+			if (AF_Impl->ArduinoMessage.Contains("Forward"))
+			{
+				AF_Impl->ArduinoFanState = EArduinoFanState::AF_Forward;
+			}
+
+			if (AF_Impl->ArduinoMessage.Contains("Reverse"))
+			{
+				AF_Impl->ArduinoFanState = EArduinoFanState::AF_Reverse;
+			}
 		}
 		else
 		{
@@ -107,7 +134,7 @@ void FArduinoWorker::Stop()
 	if (AF_Impl->IsConnected())
 	{
 		// Stop motors
-		char *ArduinoCommandStr = ArduinoCommandString("1");
+		char *ArduinoCommandStr = ArduinoCommandString("Stop");
 
 		//Writing string to arduino
 		AF_Impl->WriteSerialPort(ArduinoCommandStr, AF_Impl->ArduinoMaxDataLength);
@@ -160,6 +187,7 @@ FAF_Impl::FAF_Impl(FString ArduinoPortName, float ArduinoWaitTime, int ArduinoMa
 	, ArduinoCommand("")
 	, bIsConnected(false)
 	, IncomingDataBuffer(nullptr)
+	, ArduinoFanState(EArduinoFanState::AF_None)
 {
 	UE_LOG(LogTemp, Warning, TEXT("FAF_Impl::FAF_Impl"));
 }
@@ -207,25 +235,24 @@ bool FAF_Impl::ArduinoDisconnect()
 	return true;
 }
 
-bool FAF_Impl::ArduinoMotorStart()
-{
-	ArduinoCommand = "2";
-
-	return true;
-}
-
 bool FAF_Impl::ArduinoMotorForvard()
 {
+	ArduinoCommand = "Forward";
+
 	return true;
 }
 
 bool FAF_Impl::ArduinoMotorStop()
 {
+	ArduinoCommand = "Stop";
+
 	return true;
 }
 
 bool FAF_Impl::SetArduinoMotorVoltage(uint8 RelativeVoltage)
 {
+	ArduinoCommand = FString::Printf(TEXT("Voltage %d"), RelativeVoltage);
+
 	return true;
 }
 
