@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Engine.h"
 #include "Components/ActorComponent.h"
+#include "ArduinoFan.h"
 #include "AF_Impl.h"
 #include "AF_Controller.generated.h"
 
@@ -40,18 +41,6 @@ public:
 	*/
 	UFUNCTION(BlueprintPure, meta = (Keywords = "is connected"), Category = "ArduinoFan")
 	bool IsConnected() const;
-
-	/**
-	* Init Arduino thread
-	*/
-	UFUNCTION(BlueprintCallable, meta = (Keywords = "init arduino"), Category = "ArduinoFan")
-	bool ArduinoInit();
-
-	/**
-	* Stop arduino main tread
-	*/
-	UFUNCTION(BlueprintCallable, meta = (Keywords = "disconnect arduino"), Category = "ArduinoFan")
-	bool ArduinoDisconnect();
 
 
 	/**

@@ -4,19 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "Runtime/Core/Public/HAL/Runnable.h"
+#include "ArduinoFan.h"
 
 #include <Windows.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-UENUM(BlueprintType)
-enum class EArduinoFanState : uint8
-{
-	AF_None 		UMETA(DisplayName = "State before init"),
-	AF_Stop 		UMETA(DisplayName = "Stop fans state"),
-	AF_Forward		UMETA(DisplayName = "Forward fans state"),
-	AF_Reverse 		UMETA(DisplayName = "Reverse fans state"),
-};
 
 class FThreadSafeCounter;
 class FAF_Impl;

@@ -40,14 +40,8 @@ FArduinoWorker::~FArduinoWorker()
 
 uint32 FArduinoWorker::Run()
 {
-	// Connect to arduino
-	bool Connected = AF_Impl->ArduinoUsbConnect();
-
-	if (Connected)
+	if (AF_Impl->bIsConnected)
 	{
-		// Wait before start
-		FPlatformProcess::Sleep(AF_Impl->ArduinoWaitTime);
-
 		// Setup default voltage
 		FString ArduinoSetupVoltage = FString::Printf(TEXT("Init Voltage %d"), AF_Impl->ArduinoMotorVoltageDefault);
 		char *ArduinoCommandStr = ArduinoCommandString(ArduinoSetupVoltage);
@@ -59,7 +53,7 @@ uint32 FArduinoWorker::Run()
 	}
 
 	// Arduino main loop
-	while (Connected && StopTaskCounter.GetValue() == 0)
+	while (AF_Impl->bIsConnected && StopTaskCounter.GetValue() == 0)
 	{
 		// Execute Arduino command
 		if (!AF_Impl->ArduinoCommand.IsEmpty())
@@ -91,7 +85,7 @@ uint32 FArduinoWorker::Run()
 			}
 			if (AF_Impl->ArduinoMessage.Contains("SetVoltage"))
 			{
-				UE_LOG(LogTemp, Warning, TEXT("VOLTAGE RESPONSE"));
+				// Nothing for now
 			}
 			if (AF_Impl->ArduinoMessage.Contains("Stop"))
 			{
@@ -199,6 +193,9 @@ bool FAF_Impl::IsConnected() const
 
 bool FAF_Impl::ArduinoInit()
 {
+	// Connect to arduino
+	ArduinoUsbConnect();
+
 	// create thread
 	if (ArduinoWorker == nullptr)
 	{
@@ -328,6 +325,9 @@ bool FAF_Impl::ArduinoUsbConnect()
 			{
 				bIsConnected = true;
 				PurgeComm(Handler, PURGE_RXCLEAR | PURGE_TXCLEAR);
+
+				//We wait 2s as the arduino board will be reseting
+				Sleep(ArduinoWaitTime);
 
 				UE_LOG(LogTemp, Warning, TEXT("Arduino connected"));
 			}

@@ -11,7 +11,6 @@ UAF_Controller::UAF_Controller(const FObjectInitializer &ObjectInitializer)
 	, ArduinoMaxDataLength(255)
 	, ArduinoMotorVoltageDefault(0)
 	, ArduinoCommunicationDelay(0.1f)
-	, AF_Impl(new FAF_Impl(ArduinoPortName, ArduinoWaitTime, ArduinoMaxDataLength, ArduinoMotorVoltageDefault, ArduinoCommunicationDelay))
 	, CurrentArduinoMotorVoltage(ArduinoMotorVoltageDefault)
 	, InterfaceDelegate(nullptr)
 {
@@ -26,9 +25,7 @@ UAF_Controller::~UAF_Controller()
 {
 	if (AF_Impl != nullptr)
 	{
-		AF_Impl->ArduinoDisconnect();
-
-		delete AF_Impl;
+		AF_Impl->ArduinoMotorStop();
 		AF_Impl = nullptr;
 	}
 
@@ -41,18 +38,20 @@ void UAF_Controller::BeginPlay()
 {
 	Super::BeginPlay();
 
-	ArduinoInit();
+	AF_Impl = FArduinoFanModule::Get().GetAF_Impl();
 
-	UE_LOG(LogTemp, Warning, TEXT("UAF_Controller::BeginPlay"));
+	if (AF_Impl)
+	{
+		AF_Impl->ArduinoMotorForvard();
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("UAF_Controller::BeginPlay, %p"), AF_Impl);
 }
 
 void UAF_Controller::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 
-	ArduinoDisconnect();
-
-	UE_LOG(LogTemp, Warning, TEXT("UAF_Controller::EndPlay"));
 }
 
 // Called every frame
@@ -78,8 +77,6 @@ void UAF_Controller::OnUnregister()
 
 void UAF_Controller::SetInterfaceDelegate(UObject * NewDelegate)
 {
-	UE_LOG(LogTemp, Log, TEXT("InterfaceObject: %s"), *NewDelegate->GetName());
-
 	//Use this format to support both blueprint and C++ form
 	if (NewDelegate->GetClass()->ImplementsInterface(UAF_EventInterface::StaticClass()))
 	{
@@ -93,36 +90,51 @@ void UAF_Controller::SetInterfaceDelegate(UObject * NewDelegate)
 
 bool UAF_Controller::IsConnected() const
 {
+	if (AF_Impl)
+	{
+		return AF_Impl->IsConnected();
+	}
+
 	return false;
-}
-
-bool UAF_Controller::ArduinoInit()
-{
-	return AF_Impl->ArduinoInit();
-}
-
-bool UAF_Controller::ArduinoDisconnect()
-{
-	return AF_Impl->ArduinoDisconnect();
 }
 
 bool UAF_Controller::ArduinoMotorForvard()
 {
-	return AF_Impl->ArduinoMotorForvard();
+	if (AF_Impl)
+	{
+		return AF_Impl->ArduinoMotorForvard();
+	}
+
+	return false;
 }
 
 bool UAF_Controller::ArduinoMotorStop()
 {
-	return AF_Impl->ArduinoMotorStop();
+	if (AF_Impl)
+	{
+		return AF_Impl->ArduinoMotorStop();
+	}
+
+	return false;
 }
 
 bool UAF_Controller::SetArduinoMotorVoltage(uint8 RelativeVoltage)
 {
-	return AF_Impl->SetArduinoMotorVoltage(RelativeVoltage);
+	if (AF_Impl)
+	{
+		return AF_Impl->SetArduinoMotorVoltage(RelativeVoltage);
+	}
+
+	return false;
 }
 
 void UAF_Controller::InterfaceEventTick(float DeltaTime)
 {
+	if (AF_Impl == nullptr)
+	{
+		return;
+	}
+
 	// Fire arduino message event
 	const FString ArduinoMessage = AF_Impl->GetArduinoMessage();
 	if (!ArduinoMessage.IsEmpty())
