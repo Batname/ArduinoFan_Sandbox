@@ -83,6 +83,12 @@ protected:
 	uint8 CurrentArduinoMotorVoltage;
 
 	/**
+	* Max relative voltage for arduino motors
+	*/
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "ArduinoFan")
+	uint8 ArduinoMaxVoltage;
+
+	/**
 	* Connection delay for arduino
 	*/
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "ArduinoFan")
